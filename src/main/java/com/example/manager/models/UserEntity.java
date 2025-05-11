@@ -17,7 +17,7 @@ public class UserEntity {
     @UuidGenerator
     private String userId;
 
-    @Column(unique = true, nullable = false, length = 100)
+    @Column(nullable = false, length = 100)
     private String username;
 
     @Column(unique = true, nullable = false, length = 100)
@@ -27,7 +27,7 @@ public class UserEntity {
     private String password;
 
     @Column(length = 255)
-    private String profilePicture = "/images/3c9e096a-8178-417a-95ae-463041358dfc.jpg";
+    private String profilePicture;
 
     @Column(columnDefinition = "TEXT")
     private String bio;

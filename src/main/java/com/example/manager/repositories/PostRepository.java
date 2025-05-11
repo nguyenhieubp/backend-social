@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 
@@ -23,5 +24,22 @@ public interface PostRepository extends JpaRepository<PostEntity,String> {
     @Query("SELECT p FROM PostEntity p WHERE p.isPublicPost = TRUE")
     List<PostEntity> findAllPublicPosts();
 
+    @Query(value = """
+        WITH daily_counts AS (
+            SELECT 
+                DATE(created_at) as date,
+                COUNT(*) as new_posts
+            FROM posts
+            WHERE created_at BETWEEN ?1 AND ?2
+            GROUP BY DATE(created_at)
+        )
+        SELECT 
+            date,
+            SUM(new_posts) OVER (ORDER BY date) as total_posts,
+            new_posts
+        FROM daily_counts
+        ORDER BY date
+    """, nativeQuery = true)
+    List<Object[]> countPostsByDate(Timestamp startDate, Timestamp endDate);
 
 }

@@ -110,7 +110,46 @@ public class PostController {
         return ResponseEntity.ok(new ApiResponse<>(200, "Fetch success", isSuccess));
     }
 
+    @GetMapping("/growth")
+    public ResponseEntity<ApiResponse<?>> getPostGrowth(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate
+    ) {
+        try {
+            // Nếu không có ngày bắt đầu, mặc định lấy 30 ngày gần nhất
+            if (startDate == null) {
+                startDate = java.time.LocalDate.now().minusDays(30).toString();
+            }
+            if (endDate == null) {
+                endDate = java.time.LocalDate.now().toString();
+            }
 
+            // Query để lấy số lượng post theo ngày
+            List<Object[]> results = postRepository.countPostsByDate(
+                    Timestamp.valueOf(startDate + " 00:00:00"),
+                    Timestamp.valueOf(endDate + " 23:59:59")
+            );
+
+            // Format kết quả
+            List<java.util.Map<String, Object>> data = results.stream()
+                    .map(result -> {
+                        java.util.Map<String, Object> item = new java.util.HashMap<>();
+                        item.put("date", result[0]); // Ngày
+                        item.put("count", result[1]); // Tổng số post đến ngày đó
+                        item.put("newPosts", result[2]); // Số post mới trong ngày
+                        return item;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+
+            ApiResponse<java.util.List<java.util.Map<String, Object>>> apiResponse =
+                    new ApiResponse<>(200, "success", data);
+            return ResponseEntity.ok(apiResponse);
+        } catch (Exception e) {
+            ApiResponse<?> apiResponse =
+                    new ApiResponse<>(400, e.getMessage(), null);
+            return ResponseEntity.badRequest().body(apiResponse);
+        }
+    }
 
     @PostMapping("/{postId}/report")
     public ResponseEntity<ApiResponse<?>> reportPost(
@@ -220,7 +259,6 @@ public class PostController {
             return ResponseEntity.badRequest().body(apiResponse);
         }
     }
-
 
     private PostDTO convertPostToDTO(PostEntity entity) {
         PostDTO dto = new PostDTO();

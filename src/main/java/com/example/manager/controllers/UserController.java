@@ -8,7 +8,12 @@ import com.example.manager.dto.responses.post.PostResponse;
 import com.example.manager.dto.responses.user.ProfileUserResponse;
 import com.example.manager.dto.responses.user.UserFriend;
 import com.example.manager.dto.responses.user.UserRoleResponse;
+import com.example.manager.models.RoleEntity;
+import com.example.manager.models.UserEntity;
+import com.example.manager.models.UserRoleEntity;
+import com.example.manager.repositories.RoleRepository;
 import com.example.manager.repositories.UserRepository;
+import com.example.manager.repositories.UserRoleRepository;
 import com.example.manager.services.AuthenticationService;
 import com.example.manager.services.PostService;
 import com.example.manager.services.UserService;
@@ -16,15 +21,19 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -41,6 +50,12 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserRoleRepository userRoleRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     @Value("${jwt.signerKey}")
     private String signerKey;
@@ -188,4 +203,25 @@ public class UserController {
             return ResponseEntity.badRequest().body(apiResponse);
         }
     }
+
+    @PostMapping("/setAdmin/{userId}")
+    public ResponseEntity<ApiResponse<?>> setAdmin(@PathVariable("userId") String userId) {
+        Optional<UserEntity> userOpt = userRepository.findByUserId(userId);
+        if (userOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+
+        RoleEntity roleAdmin = roleRepository.findByRoleName("ADMIN")
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found"));
+
+        UserRoleEntity userRole = new UserRoleEntity();
+        userRole.setUser(userOpt.get());
+        userRole.setRole(roleAdmin);
+
+        userRoleRepository.save(userRole);   // Lưu vào DB nếu cần
+
+        return ResponseEntity.ok(new ApiResponse<>(200,"SUCCESS",null));
+    }
+
+
 }
