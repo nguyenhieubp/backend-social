@@ -23,12 +23,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -68,10 +71,28 @@ public class PostController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<?> getAllPost(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
-        Page<PostResponse> postResponses = postService.getAllPost(page-1,size);
+    public ResponseEntity<?> getAllPost(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String userName,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate
+    ) {
+        Timestamp startTimestamp = null;
+        Timestamp endTimestamp = null;
+
+        if (startDate != null) {
+            startTimestamp = Timestamp.valueOf(startDate.atStartOfDay());
+        }
+        if (endDate != null) {
+            endTimestamp = Timestamp.valueOf(endDate.atTime(23, 59, 59));
+        }
+
+        Page<PostResponse> postResponses = postService.getAllPost(page - 1, size, userName, startTimestamp, endTimestamp);
         return ResponseEntity.ok(new ApiResponse<>(200, "Fetch success", postResponses));
     }
+
+
 
     @DeleteMapping("/{postId}")
     public ResponseEntity<?> deletePost(@PathVariable String postId) {

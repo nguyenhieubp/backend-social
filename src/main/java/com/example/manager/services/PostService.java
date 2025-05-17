@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -184,10 +185,10 @@ public class PostService {
 
 
     // ----------------- Lấy tất cả bài viết ------------------------//
-    public Page<PostResponse> getAllPost(int page, int size) {
+    public Page<PostResponse> getAllPost(int page, int size, String userName, Timestamp startDate, Timestamp endDate) {
         Pageable pageable = PageRequest.of(page, size);
 
-        List<PostEntity> allPosts = postRepository.findAllPublicPosts();
+        List<PostEntity> allPosts = postRepository.findAllPublicPostByFilter(userName,startDate,endDate);
         Collections.shuffle(allPosts); // Xáo trộn danh sách bài viết
 
         // Cắt danh sách theo phân trang

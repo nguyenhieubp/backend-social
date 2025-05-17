@@ -21,8 +21,18 @@ public interface PostRepository extends JpaRepository<PostEntity,String> {
     @Query("SELECT p FROM PostEntity p WHERE p.user.userId = :userId AND p.isPublicPost = FALSE")
     Page<PostEntity> findAllPrivatePostByUserId(@Param("userId") String userId, Pageable pageable);
 
-    @Query("SELECT p FROM PostEntity p WHERE p.isPublicPost = TRUE")
-    List<PostEntity> findAllPublicPosts();
+    @Query("SELECT p FROM PostEntity p " +
+            "WHERE p.isPublicPost = TRUE " +
+            "AND (:username IS NULL OR LOWER(p.user.username) LIKE LOWER(CONCAT('%', :username, '%'))) " +
+            "AND (:startDate IS NULL OR p.createdAt >= :startDate) " +
+            "AND (:endDate IS NULL OR p.createdAt <= :endDate)")
+    List<PostEntity> findAllPublicPostByFilter(
+            @Param("username") String username,
+            @Param("startDate") Timestamp startDate,
+            @Param("endDate") Timestamp endDate
+    );
+
+s
 
     @Query(value = """
         WITH daily_counts AS (
